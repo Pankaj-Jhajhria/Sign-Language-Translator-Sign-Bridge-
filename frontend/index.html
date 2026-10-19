@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Sign Language Translator</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+    <!-- ================================================= -->
+    <!-- HEADER -->
+    <!-- ================================================= -->
+
+    <header class="top-header">
+
+        <div>
+
+            <h1>
+                Sign Language Translator
+            </h1>
+
+            <p>
+                Real-time Indian Sign Language recognition
+            </p>
+
+        </div>
+
+
+        <div class="status">
+
+            <span id="statusDot"></span>
+
+            <span id="statusText">
+                Connecting...
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================================================= -->
+    <!-- SIGN TUTORIAL -->
+    <!-- ================================================= -->
+
+    <section class="tutorial-card">
+
+        <div class="tutorial-header">
+
+            <div>
+
+                <h2>
+                    Sign Guide
+                </h2>
+
+                <p>
+                    Forgot a sign? Use these examples while signing.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="symbol-section">
+
+            <h3>
+                Numbers
+            </h3>
+
+            <div
+                id="numberSymbols"
+                class="symbol-row">
+            </div>
+
+        </div>
+
+
+        <div class="symbol-section">
+
+            <h3>
+                Letters
+            </h3>
+
+            <div
+                id="letterSymbols"
+                class="symbol-row">
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================= -->
+
+    <main>
+
+
+        <!-- ================================================= -->
+        <!-- CAMERA -->
+        <!-- ================================================= -->
+
+        <section class="camera-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>
+                        Live Camera
+                    </h2>
+
+                    <p>
+                        Show your sign to the camera
+                    </p>
+
+                </div>
+
+
+                <div class="camera-status">
+
+                    <span></span>
+
+                    Camera Active
+
+                </div>
+
+            </div>
+
+
+            <div class="camera-wrapper">
+
+                <video
+                    id="camera"
+                    autoplay
+                    playsinline
+                    muted>
+                </video>
+
+
+                <canvas
+                    id="canvas"
+                    hidden>
+                </canvas>
+
+
+                <div class="prediction-overlay">
+
+                    <div class="prediction-label">
+                        Prediction
+                    </div>
+
+                    <div
+                        id="prediction"
+                        class="prediction">
+                        NO SIGN
+                    </div>
+
+                    <div
+                        id="confidence"
+                        class="confidence">
+                        Confidence: 0%
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="hand-info">
+
+                Hands detected:
+                <strong id="hands">0</strong>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- TEXT -->
+        <!-- ================================================= -->
+
+        <section class="text-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>
+                        Recognized Text
+                    </h2>
+
+                    <p>
+                        Your sign language in real time
+                    </p>
+
+                </div>
+
+
+                <button
+                    id="clearBtn"
+                    class="secondary-btn">
+                    Clear
+                </button>
+
+            </div>
+
+
+            <div
+                id="textOutput"
+                class="text-output">
+
+                Start making signs...
+
+            </div>
+
+
+            <div class="controls">
+
+                <button
+                    id="speakBtn"
+                    class="primary-btn">
+                    🔊 Speak
+                </button>
+
+                <button
+                    id="spaceBtn"
+                    class="secondary-btn">
+                    Space
+                </button>
+
+                <button
+                    id="backspaceBtn"
+                    class="secondary-btn">
+                    ⌫ Delete
+                </button>
+
+            </div>
+
+
+            <div class="tips">
+
+                <h3>
+                    Tips for better recognition
+                </h3>
+
+                <p>
+                    • Keep your hand clearly visible
+                </p>
+
+                <p>
+                    • Use good lighting
+                </p>
+
+                <p>
+                    • Hold the sign steady briefly
+                </p>
+
+                <p>
+                    • Use the guide above if you forget a sign
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================================================= -->
+    <!-- FOOTER -->
+    <!-- ================================================= -->
+
+    <footer>
+
+        <span>
+            Runs locally on your computer
+        </span>
+
+        <span>•</span>
+
+        <span>
+            Your camera frames stay local
+        </span>
+
+    </footer>
+
+
+</div>
+
+
+<script src="/static/app.js"></script>
+
+</body>
+
+</html>

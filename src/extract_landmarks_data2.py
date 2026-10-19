@@ -4,10 +4,9 @@ import pandas as pd
 import mediapipe as mp
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
-import numpy as np
 
-DATA_DIR = "data"
-OUTPUT_FILE = "landmarks_2hand.csv"
+DATA_DIR = "data2"
+OUTPUT_FILE = "landmarks_data2.csv"
 MODEL_PATH = "models/hand_landmarker.task"
 
 NUM_WORKERS = 8
@@ -18,50 +17,21 @@ landmarker = None
 def init_worker():
     global landmarker
 
-    BaseOptions = mp.tasks.BaseOptions
-    HandLandmarker = mp.tasks.vision.HandLandmarker
-    HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
-    RunningMode = mp.tasks.vision.RunningMode
-
-    options = HandLandmarkerOptions(
-        base_options=BaseOptions(
+    options = mp.tasks.vision.HandLandmarkerOptions(
+        base_options=mp.tasks.BaseOptions(
             model_asset_path=MODEL_PATH
         ),
-        running_mode=RunningMode.IMAGE,
+        running_mode=mp.tasks.vision.RunningMode.IMAGE,
         num_hands=2,
         min_hand_detection_confidence=0.5
     )
 
-    landmarker = HandLandmarker.create_from_options(options)
-
-
-def normalize_hand(hand):
-    """
-    Normalize landmarks so hand position and size
-    have less effect on classification.
-    """
-
-    points = np.array(
-        [[lm.x, lm.y, lm.z] for lm in hand],
-        dtype=np.float32
+    landmarker = mp.tasks.vision.HandLandmarker.create_from_options(
+        options
     )
-
-    # Wrist becomes origin
-    points = points - points[0]
-
-    # Normalize by hand size
-    distances = np.linalg.norm(points, axis=1)
-
-    scale = np.max(distances)
-
-    if scale > 0:
-        points = points / scale
-
-    return points.flatten().tolist()
 
 
 def process_image(task):
-
     image_path, label = task
 
     image = cv2.imread(image_path)
@@ -69,42 +39,58 @@ def process_image(task):
     if image is None:
         return None
 
-    image_rgb = cv2.cvtColor(
+    rgb = cv2.cvtColor(
         image,
         cv2.COLOR_BGR2RGB
     )
 
     mp_image = mp.Image(
         image_format=mp.ImageFormat.SRGB,
-        data=image_rgb
+        data=rgb
     )
 
     result = landmarker.detect(mp_image)
 
-    # Default: no hands
+    # 63 + 63 = 126
     left_features = [0.0] * 63
     right_features = [0.0] * 63
 
+    left_detected = 0
+    right_detected = 0
+
     if result.hand_landmarks:
 
-        for hand_landmarks, handedness in zip(
+        for hand, handedness in zip(
             result.hand_landmarks,
             result.handedness
         ):
 
-            normalized = normalize_hand(hand_landmarks)
+            features = []
+
+            for landmark in hand:
+                features.extend([
+                    landmark.x,
+                    landmark.y,
+                    landmark.z
+                ])
 
             hand_type = handedness[0].category_name
 
             if hand_type == "Left":
-                left_features = normalized
+                left_features = features
+                left_detected = 1
 
             elif hand_type == "Right":
-                right_features = normalized
+                right_features = features
+                right_detected = 1
 
-    features = left_features + right_features
+    hand_count = left_detected + right_detected
 
-    return features + [label]
+    return (
+        left_features
+        + right_features
+        + [left_detected, right_detected, hand_count, label]
+    )
 
 
 if __name__ == "__main__":
@@ -113,7 +99,10 @@ if __name__ == "__main__":
 
     for label in sorted(os.listdir(DATA_DIR)):
 
-        folder = os.path.join(DATA_DIR, label)
+        folder = os.path.join(
+            DATA_DIR,
+            label
+        )
 
         if not os.path.isdir(folder):
             continue
@@ -124,18 +113,19 @@ if __name__ == "__main__":
                 (".jpg", ".jpeg", ".png")
             ):
 
-                path = os.path.join(
-                    folder,
-                    filename
+                tasks.append(
+                    (
+                        os.path.join(folder, filename),
+                        label
+                    )
                 )
-
-                tasks.append((path, label))
 
     print(f"Total images: {len(tasks)}")
     print(f"Workers: {NUM_WORKERS}")
-    print("Starting 2-hand normalized extraction...\n")
+    print("Starting full data2 extraction...\n")
 
     rows = []
+    failed = 0
 
     with ProcessPoolExecutor(
         max_workers=NUM_WORKERS,
@@ -155,21 +145,27 @@ if __name__ == "__main__":
 
             if result is not None:
                 rows.append(result)
+            else:
+                failed += 1
 
-    # Create column names
     columns = []
 
     for hand in ["left", "right"]:
 
-        for i in range(21):
+        for i in range(1, 22):
 
             columns.extend([
-                f"{hand}_x{i+1}",
-                f"{hand}_y{i+1}",
-                f"{hand}_z{i+1}"
+                f"{hand}_x{i}",
+                f"{hand}_y{i}",
+                f"{hand}_z{i}"
             ])
 
-    columns.append("label")
+    columns.extend([
+        "left_detected",
+        "right_detected",
+        "hand_count",
+        "label"
+    ])
 
     df = pd.DataFrame(
         rows,
@@ -183,6 +179,6 @@ if __name__ == "__main__":
 
     print("\n========== DONE ==========")
     print(f"Successful: {len(rows)}")
-    print(f"Failed: {len(tasks) - len(rows)}")
-    print(f"Features: {len(columns) - 1}")
+    print(f"Failed: {failed}")
+    print(f"Features: 126")
     print(f"Saved: {OUTPUT_FILE}")
